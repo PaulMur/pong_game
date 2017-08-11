@@ -20,23 +20,29 @@
 
 
         <script>
+           // Base variables
             var canvas;
             var canvasContext;
             var ballX = 50;
             var ballY = 50;
             var ballSpeedX = 8;
             var ballspeedY = 4;
-
+            // Keep track of player scores
             var player1Score = 0;
             var player2Score = 0;
-            const WINNING_SCORE = 3;
-
+            // Winning screen show (False = no show on winning screen)
             var showingWinScreen = false;
-
+            // Initial paddle positions
             var paddle1Y = 250;
             var paddle2Y = 250;
+
+            /* Constants to control gameplay and size of paddles */
+
             const PADDLE_HEIGHT = 100;
             const PADDLE_WIDTH = 15;
+            const WINNING_SCORE = 3;
+
+            /* Calculate the position of the mouse for moving the left paddle */
 
             function calculateMousePos(evt) {
                 var rect = canvas.getBoundingClientRect();
@@ -49,13 +55,18 @@
                 };
             }
 
+            /* Simple click handler used for the Click to continue function */
+
             function handleMouseClick(evt) {
+                // Win screen and reset
                 if(showingWinScreen) {
                     player1Score = 0;
                     player2Score = 0;
                     showingWinScreen = false;
                 }
             }
+
+            /* Keyboard press function */
            
             function dealWithKeyboard(evt) {
                 if(lastDownTarget == canvas) {
@@ -63,18 +74,27 @@
                 }
             }
 
+            /* Onload function run when the window loads */
+
             window.onload = function() {
+                // Canvas retrieval
                 canvas = document.getElementById('gameCanvas');
                 canvasContext = canvas.getContext('2d');
-
+                // Frames per second counter and game controller code
                 var framesPerSecond = 30;
                 setInterval(function() {
                     moveEverything();
                     drawEverything();
                 }, 1000/framesPerSecond);
-
+                // Event listener for Mouse clicks
                 canvas.addEventListener('mousedown',handleMouseClick);
-
+                // Event listener for mouse movements
+                canvas.addEventListener('mousemove', 
+                    function(evt) {
+                        var mousePos = calculateMousePos(evt);
+                        paddle1Y = mousePos.y-(PADDLE_HEIGHT/2);
+                    });
+                // Keypress listener
                 window.addEventListener('keydown', function(event) {
                     if(event.key == 'w') {
                         paddle1Y -= 20;
@@ -83,7 +103,7 @@
                         paddle1Y += 20;
                     }
                 }, true);
-
+                // Keypress listener
                 window.addEventListener('keydown', function(event) {
                     if(event.key == 'ArrowUp') {
                         paddle2Y -= 20;
@@ -93,43 +113,34 @@
                     }
                 }, true);
 
-                canvas.addEventListener('mousemove', 
-                    function(evt) {
-                        var mousePos = calculateMousePos(evt);
-                        paddle1Y = mousePos.y-(PADDLE_HEIGHT/2);
-                    });
-
-                
             }
 
+            /* Reset the ball of the game after each point */
+
             function ballReset() {
+                // See if someone won
                 if(player1Score >= WINNING_SCORE || player2Score >= WINNING_SCORE) {
                     showingWinScreen = true;
                 }
-
+                // Alter ball direction
                 ballSpeedX = -ballSpeedX;
+                // Place ball in the middle of the screen
                 ballX = canvas.width/2;
                 ballY = canvas.height/2;
             }
 
-            function computerMovement() {
-                var paddle2YCenter = paddle2Y + (PADDLE_HEIGHT/2);
-                if(paddle2YCenter < ballY - 35) {
-                    paddle2Y += 6;
-                } else if(paddle2YCenter > ballY + 35) {
-                    paddle2Y -= 6;
-                }
-            }
+
+           /* Contoller method for movement on the screen */
 
             function moveEverything() {
+                // Break out of the movement controller for 
                 if(showingWinScreen) {
                     return;
                 }
-                // computerMovement();
-
+                //Convert speed to movement
                 ballX += ballSpeedX;
                 ballY += ballspeedY;
-
+                // Collision detection
                 if (ballX < 25) {
                     if(ballY > paddle1Y && ballY < paddle1Y+PADDLE_HEIGHT) {
                         ballSpeedX = -ballSpeedX;
@@ -137,10 +148,12 @@
                         var deltaY = ballY - (paddle1Y+(PADDLE_HEIGHT/2));
                         ballspeedY = deltaY * 0.35;
                     } else {
+                        // Add score on player 2 win
                         player2Score++;
                         ballReset();
                     }
                 }
+                // Collision detection
                 if (ballX >  canvas.width - 25) {
                     if(ballY > paddle2Y && ballY < paddle2Y+PADDLE_HEIGHT) {
                         ballSpeedX = -ballSpeedX;
@@ -148,11 +161,12 @@
                         var deltaY = ballY - (paddle2Y+(PADDLE_HEIGHT/2));
                         ballspeedY = deltaY * 0.35;
                     } else {
+                        // Add score on player 1 win
                         player1Score++;
                         ballReset();
                     }
                 } 
-
+                // Y axis wall rebound
                 if(ballY < 0) {
                     ballspeedY = -ballspeedY;
                 }
@@ -161,11 +175,15 @@
                 }
             }
 
+            /* Draw the pong net, the line down the middle */
+
             function drawNet() {
                 for(var i = 0; i < canvas.height; i += 40) {
                     colorRect(canvas.width/2-1,i,2,20,'white');
                 }
-            }
+            } 
+
+            /* Draw everything function */
 
             function drawEverything() {
                 // Set play area
@@ -173,9 +191,9 @@
                 if(showingWinScreen) {
                     canvasContext.fillStyle = 'white';
                     if(player1Score >= WINNING_SCORE) {
-                        canvasContext.fillText("Left Player WON!!", 250, 200);
+                        canvasContext.fillText("Player WON!!", 250, 200);
                     } else if(player2Score >= WINNING_SCORE) {
-                        canvasContext.fillText("Right Player WON!!", 250, 200);
+                        canvasContext.fillText("Computer WON!!", 250, 200);
                     }
                     canvasContext.fillText("Click to continue...", 250, 400);
                     return;
@@ -189,7 +207,7 @@
                 // Draw the ball
                 colorCircle(ballX, ballY, 5, 'white');
                 // Draw out the score
-                canvasContext.font="30px Arial";
+                canvasContext.font = "30px Arial";
                 canvasContext.fillText(player1Score, 200, 100);
                 canvasContext.fillText(player2Score, canvas.width-200, 100);
                 
